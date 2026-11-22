@@ -6,13 +6,16 @@ pipeline {
            description: 'Carpeta de la app a construir')
     booleanParam(name: 'ENFORCE_GATE', defaultValue: true,
            description: 'Fallar el pipeline si hay hallazgos medios/altos')
+<<<<<<< HEAD
     booleanParam(name: 'RUN_ZAP', defaultValue: false,
            description: 'Ejecutar ZAP en modo comando (puede tardar 5-15 min)')
+=======
+>>>>>>> fe7a07b5af49ff1dbf223c0234e5a91b66222159
   }
 
   environment {
     BASE    = 'C:\\ev3'
-    PY      = 'C:\\ev3\\.venv\\Scripts\\python.exe'
+    PY      = SYS_PY = 'C:\\Python312\\python.exe'
     ZAP     = 'C:\\Program Files\\ZAP\\Zed Attack Proxy\\zap.bat'
     REPORTS = "${WORKSPACE}\\reports"
   }
