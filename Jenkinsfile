@@ -90,15 +90,15 @@ pipeline {
       }
     }
 
-    stage('DAST - OWASP ZAP') {
-      when { expression { return params.RUN_ZAP } }
-      steps {
-        bat '''
-          "%ZAP%" -cmd -port 8090 -quickurl "http://127.0.0.1:5000/hello?name=test" -quickout "%REPORTS%\\zap-report.html" -quickprogress
-        '''
-      }
-    }
-  }
+stage('DAST - OWASP ZAP') {
+   when { expression { return params.RUN_ZAP } }
+   steps {
+     bat '''
+       cd /d "C:\\Program Files\\ZAP_2.17.0"
+       zap.bat -cmd -port 8090 -quickurl "http://127.0.0.1:5000/hello?name=test" -quickout "%REPORTS%\\zap-report.html" -quickprogress
+     '''
+   }
+ }
 
   post {
     always { archiveArtifacts artifacts: 'reports/*', allowEmptyArchive: true }
