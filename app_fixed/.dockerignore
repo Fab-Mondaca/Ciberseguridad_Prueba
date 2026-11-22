@@ -1,0 +1,4 @@
+__pycache__/
+*.log
+.git
+test_app.py

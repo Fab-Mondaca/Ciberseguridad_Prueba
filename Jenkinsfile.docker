@@ -1,0 +1,75 @@
+// VERSION CON DOCKER DEL PIPELINE (para un equipo con Docker).
+// En tu PC sin virtualizacion NO se ejecuta: usa el archivo "Jenkinsfile".
+// Se incluye en el informe como diseno de las etapas de construccion y
+// despliegue con contenedores.
+pipeline {
+  agent any
+
+  parameters {
+    booleanParam(name: 'ENFORCE_GATE', defaultValue: true,
+           description: 'Fallar el pipeline si hay hallazgos medios/altos')
+  }
+
+  environment {
+    BASE    = 'C:\\ev3'
+    PY      = 'C:\\ev3\\.venv\\Scripts\\python.exe'
+    APP_DIR = 'app_fixed'
+    IMAGE   = 'flask-app:fixed'
+    REPORTS = "${WORKSPACE}\\reports"
+  }
+
+  stages {
+
+    stage('Test') {
+      steps {
+        bat '''
+          if not exist "%REPORTS%" mkdir "%REPORTS%"
+          if not exist "%BASE%\\.venv" python -m venv "%BASE%\\.venv"
+          "%PY%" -m pip install -r "%BASE%\\%APP_DIR%\\requirements.txt"
+          cd /d "%BASE%\\%APP_DIR%"
+          "%PY%" -m pytest -q --junitxml="%REPORTS%\\test-results.xml"
+        '''
+      }
+    }
+
+    stage('SAST - Bandit') {
+      steps {
+        script {
+          def rc = bat(returnStatus: true, script: '''
+            "%PY%" -m pip install bandit
+            cd /d "%BASE%\\%APP_DIR%"
+            "%PY%" -m bandit -r app.py -ll
+          ''')
+          if (rc != 0 && params.ENFORCE_GATE) { error('Bandit encontro vulnerabilidades: pipeline bloqueado') }
+        }
+      }
+    }
+
+    stage('Docker Build') {
+      steps { bat 'docker build -t %IMAGE% "%BASE%\\%APP_DIR%"' }
+    }
+
+    stage('Docker Deploy') {
+      steps {
+        bat '''
+          docker rm -f flask-app 2>nul
+          docker run -d --name flask-app -p 5000:5000 %IMAGE%
+          ping -n 6 127.0.0.1 > nul
+          curl -s "http://127.0.0.1:5000/hello?name=Ana"
+        '''
+      }
+    }
+
+    stage('DAST - ZAP (contenedor)') {
+      steps {
+        bat '''
+          docker run --rm -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t "http://host.docker.internal:5000/hello?name=test" -I
+        '''
+      }
+    }
+  }
+
+  post {
+    always { junit allowEmptyResults: true, testResults: 'reports/test-results.xml' }
+  }
+}
