@@ -6,17 +6,15 @@ pipeline {
            description: 'Carpeta de la app a construir')
     booleanParam(name: 'ENFORCE_GATE', defaultValue: true,
            description: 'Fallar el pipeline si hay hallazgos medios/altos')
-<<<<<<< HEAD
     booleanParam(name: 'RUN_ZAP', defaultValue: false,
            description: 'Ejecutar ZAP en modo comando (puede tardar 5-15 min)')
-=======
->>>>>>> fe7a07b5af49ff1dbf223c0234e5a91b66222159
   }
 
   environment {
-    BASE    = 'C:\\ev3'
-    PY      = SYS_PY = 'C:\\Python312\\python.exe'
-    ZAP     = 'C:\\Program Files\\ZAP\\Zed Attack Proxy\\zap.bat'
+    BASE    = "${WORKSPACE}"
+    SYS_PY  = 'C:\\Python312\\python.exe'
+    PY      = "${WORKSPACE}\\.venv\\Scripts\\python.exe"
+    ZAP     = 'C:\\ZAP\\zap.bat'
     REPORTS = "${WORKSPACE}\\reports"
   }
 
@@ -26,7 +24,7 @@ pipeline {
       steps {
         bat '''
           if not exist "%REPORTS%" mkdir "%REPORTS%"
-          if not exist "%BASE%\\.venv" python -m venv "%BASE%\\.venv"
+          if not exist "%BASE%\\.venv" "%SYS_PY%" -m venv "%BASE%\\.venv"
           "%PY%" -m pip install --upgrade pip
           "%PY%" -m pip install -r "%BASE%\\%APP_DIR%\\requirements.txt"
         '''
@@ -93,7 +91,7 @@ pipeline {
     }
 
     stage('DAST - OWASP ZAP') {
-      when { expression { params.RUN_ZAP } }
+      when { expression { return params.RUN_ZAP } }
       steps {
         bat '''
           "%ZAP%" -cmd -port 8090 -quickurl "http://127.0.0.1:5000/hello?name=test" -quickout "%REPORTS%\\zap-report.html" -quickprogress
