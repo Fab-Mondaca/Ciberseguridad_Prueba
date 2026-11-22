@@ -14,7 +14,7 @@ pipeline {
     BASE    = "${WORKSPACE}"
     SYS_PY  = 'C:\\Python312\\python.exe'
     PY      = "${WORKSPACE}\\.venv\\Scripts\\python.exe"
-    ZAP     = 'C:\\ZAP\\zap.bat'
+    ZAP     = 'C:\\Program Files\\ZAP_2.17.0\\zap.bat'
     REPORTS = "${WORKSPACE}\\reports"
   }
 
